@@ -1,0 +1,27 @@
+name: record
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: record
+  cancel-in-progress: false
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - run: python recorder.py
+      - name: commit
+        run: |
+          git config user.name "recorder-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add data state
+          git diff --cached --quiet || (git commit -m "snapshot $(date -u +%FT%TZ)" && git push)
